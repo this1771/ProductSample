@@ -17,6 +17,23 @@ git clone https://github.com/this1771/ProductSample.git && cd ProductSample
 gradle clean build 
 ```
 
+#### 통합 및 단위테스트
+- 전체 테스트
+```
+gradle test
+```
+- 개별 테스트
+```
+gradle test --tests "com.example.productsample.controller.search.SearchControllerTest"
+gradle test --tests "com.example.productsample.controller.product.ProductControllerTest"
+gradle test --tests "com.example.productsample.controller.category.CategoryControllerTest"
+gradle test --tests "com.example.productsample.controller.brand.BrandControllerTest"
+gradle test --tests "com.example.productsample.service.SearchServiceTest"
+gradle test --tests "com.example.productsample.service.ProductServiceTest"
+gradle test --tests "com.example.productsample.service.CategoryServiceTest"
+gradle test --tests "com.example.productsample.service.BrandServiceTest"
+```
+
 #### 어플리케이션 실행
 ```
 docker-compose up --build 
@@ -41,10 +58,10 @@ http://localhost:8080/
   - {{brandCd}}, {{productCd}} 실제 값으로 변경 필요.
 
 
-## 요구사항 체크 리스트
+## 구현 범위
 - [x] 카테고리 별 최저가 상품 조회 API
 - [x] 최저가 브랜드 내 카테고리별 최저가 상품 조회 API
 - [x] 카테고리 별 최저/최고가 상품 조회 API
 - [x] 브랜드 및 상품 추가 / 업데이트 / 삭제 API
 - [x] (선택) 단위/통합 테스트 작성
-- [ ] (선택) Frontend 구현 (구현1 ~ 3까지)
+- [ ] (선택) Frontend 구현 (구현1 ~ 구현3까지만 구현)
