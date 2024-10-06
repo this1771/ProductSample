@@ -1,0 +1,94 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    runtimeOnly 'com.h2database:h2'
+
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        // Display the names of the tests
+        showStandardStreams = false
+    }
+}
+
+/*
+ 프론트 페이지 React 빌드 및 static 배포 설정
+ */
+def frontendDir = "$projectDir/src/main/frontend"
+
+// 환경에 따라 npm의 경로 찾기.
+static def whichNpmPath() {
+    def process = ['bash', '-c', 'which npm'].execute()
+    process.waitFor()
+    return process.in.text.trim()
+}
+
+def npmPath = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? "npm.cmd" : whichNpmPath() ?: "npm"
+
+processResources {
+    // gradle test시와 개별 단위 테스트시 Skip!
+    if (!gradle.startParameter.taskNames.contains('test') && !gradle.startParameter.taskNames.any { it.startsWith(':test') }) {
+        dependsOn "copyReactBuildFiles"
+    }
+}
+
+tasks.register('installReact', Exec) {
+    workingDir "$frontendDir"
+    inputs.dir "$frontendDir"
+    group = BasePlugin.BUILD_GROUP
+    commandLine "$npmPath", "audit", "fix"
+    commandLine "$npmPath", 'install'
+}
+
+tasks.register('buildReact', Exec) {
+    dependsOn "installReact"
+    workingDir "$frontendDir"
+    inputs.dir "$frontendDir"
+    group = BasePlugin.BUILD_GROUP
+    commandLine "$npmPath", "run-script", "build"
+}
+
+// React 프로젝트를 빌드 후, Spring Boot resource/static 디렉토리로 복사
+tasks.register('copyReactBuildFiles', Copy) {
+    dependsOn "buildReact"
+    from "$frontendDir/build"
+    into "$projectDir/src/main/resources/static"
+}
+
